@@ -40,6 +40,15 @@ type ServiceRouteHTTPMatch struct {
 	Methods    []string                          `json:",omitempty"`
 }
 
+func (m ServiceRouteHTTPMatch) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"path_exact":  "pathexact",
+		"path_prefix": "pathprefix",
+		"path_regex":  "pathregex",
+		"query_param": "queryparam",
+	}
+}
+
 type ServiceRouteHTTPMatchHeader struct {
 	Name    string
 	Present bool   `json:",omitempty"`
@@ -66,6 +75,17 @@ type ServiceRouteDestination struct {
 	NumRetries            uint32        `json:",omitempty"`
 	RetryOnConnectFailure bool          `json:",omitempty"`
 	RetryOnStatusCodes    []uint32      `json:",omitempty"`
+}
+
+func (e *ServiceRouteDestination) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset":           "servicesubset",
+		"prefix_rewrite":           "prefixrewrite",
+		"request_timeout":          "requesttimeout",
+		"num_retries":              "numretries",
+		"retry_on_connect_failure": "retryonconnectfailure",
+		"retry_on_status_codes":    "retryonstatuscodes",
+	}
 }
 
 func (e *ServiceRouteDestination) MarshalJSON() ([]byte, error) {
@@ -127,6 +147,12 @@ type ServiceSplit struct {
 	Namespace     string `json:",omitempty"`
 }
 
+func (s ServiceSplit) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset": "servicesubset",
+	}
+}
+
 type ServiceResolverConfigEntry struct {
 	Kind      string
 	Name      string
@@ -140,6 +166,13 @@ type ServiceResolverConfigEntry struct {
 
 	CreateIndex uint64
 	ModifyIndex uint64
+}
+
+func (e *ServiceResolverConfigEntry) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"connect_timeout": "connecttimeout",
+		"default_subset":  "defaultsubset",
+	}
 }
 
 func (e *ServiceResolverConfigEntry) MarshalJSON() ([]byte, error) {
@@ -188,6 +221,12 @@ type ServiceResolverSubset struct {
 	OnlyPassing bool   `json:",omitempty"`
 }
 
+func (s ServiceResolverSubset) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"only_passing": "onlypassing",
+	}
+}
+
 type ServiceResolverRedirect struct {
 	Service       string `json:",omitempty"`
 	ServiceSubset string `json:",omitempty"`
@@ -195,9 +234,21 @@ type ServiceResolverRedirect struct {
 	Datacenter    string `json:",omitempty"`
 }
 
+func (s ServiceResolverRedirect) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset": "servicesubset",
+	}
+}
+
 type ServiceResolverFailover struct {
 	Service       string   `json:",omitempty"`
 	ServiceSubset string   `json:",omitempty"`
 	Namespace     string   `json:",omitempty"`
 	Datacenters   []string `json:",omitempty"`
+}
+
+func (s ServiceResolverFailover) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset": "servicesubset",
+	}
 }

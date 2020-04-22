@@ -421,6 +421,17 @@ type ExposePath struct {
 	ParsedFromCheck bool
 }
 
+// TODO: test case for this, the type is used as a non-pointer, but the methods
+// have pointer receivers.
+func (t *ExposePath) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"local_path_port": "localpathport",
+		"listener_port":   "listenerport",
+	}
+}
+
+// TODO: this is most likely not used. The API type is the one to be deserialized
+// with JSON
 func (t *ExposePath) UnmarshalJSON(data []byte) (err error) {
 	type Alias ExposePath
 	aux := &struct {

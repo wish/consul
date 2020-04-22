@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/consul/acl"
 	"github.com/hashicorp/consul/agent/cache"
 	"github.com/hashicorp/consul/lib"
+	"github.com/hashicorp/consul/lib/decode"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/go-multierror"
 	"github.com/mitchellh/hashstructure"
@@ -66,6 +67,13 @@ type ServiceConfigEntry struct {
 
 	EnterpriseMeta `hcl:",squash" mapstructure:",squash"`
 	RaftIndex
+}
+
+func (e *ServiceConfigEntry) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"mesh_gateway": "meshgateway",
+		"external_sni": "externalsni",
+	}
 }
 
 func (e *ServiceConfigEntry) GetKind() string {
@@ -139,6 +147,12 @@ type ProxyConfigEntry struct {
 
 	EnterpriseMeta `hcl:",squash" mapstructure:",squash"`
 	RaftIndex
+}
+
+func (e *ProxyConfigEntry) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"mesh_gateway": "meshgateway",
+	}
 }
 
 func (e *ProxyConfigEntry) GetKind() string {
@@ -283,20 +297,13 @@ func DecodeConfigEntry(raw map[string]interface{}) (ConfigEntry, error) {
 		return nil, fmt.Errorf("Kind value in payload is not a string")
 	}
 
-	skipWhenPatching, translateKeysDict, err := ConfigEntryDecodeRulesForKind(entry.GetKind())
-	if err != nil {
-		return nil, err
-	}
-
-	// lib.TranslateKeys doesn't understand []map[string]interface{} so we have
-	// to do this part first.
-	raw = lib.PatchSliceOfMaps(raw, skipWhenPatching, nil)
-
-	lib.TranslateKeys(raw, translateKeysDict)
-
 	var md mapstructure.Metadata
 	decodeConf := &mapstructure.DecoderConfig{
-		DecodeHook:       mapstructure.StringToTimeDurationHookFunc(),
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			decode.HookNormalizeHCLNestedBlocks,
+			decode.HookTranslateKeys,
+			mapstructure.StringToTimeDurationHookFunc(),
+		),
 		Metadata:         &md,
 		Result:           &entry,
 		WeaklyTypedInput: true,
@@ -322,88 +329,6 @@ func DecodeConfigEntry(raw map[string]interface{}) (ConfigEntry, error) {
 		return nil, err
 	}
 	return entry, nil
-}
-
-// ConfigEntryDecodeRulesForKind returns rules for 'fixing' config entry key
-// formats by kind. This is shared between the 'structs' and 'api' variations
-// of config entries.
-func ConfigEntryDecodeRulesForKind(kind string) (skipWhenPatching []string, translateKeysDict map[string]string, err error) {
-	switch kind {
-	case ProxyDefaults:
-		return []string{
-				"expose.paths",
-				"Expose.Paths",
-			}, map[string]string{
-				"local_path_port": "localpathport",
-				"listener_port":   "listenerport",
-				"mesh_gateway":    "meshgateway",
-				"config":          "",
-			}, nil
-	case ServiceDefaults:
-		return []string{
-				"expose.paths",
-				"Expose.Paths",
-			}, map[string]string{
-				"local_path_port": "localpathport",
-				"listener_port":   "listenerport",
-				"mesh_gateway":    "meshgateway",
-				"external_sni":    "externalsni",
-			}, nil
-	case ServiceRouter:
-		return []string{
-				"routes",
-				"Routes",
-				"routes.match.http.header",
-				"Routes.Match.HTTP.Header",
-				"routes.match.http.query_param",
-				"Routes.Match.HTTP.QueryParam",
-			}, map[string]string{
-				"num_retries":              "numretries",
-				"path_exact":               "pathexact",
-				"path_prefix":              "pathprefix",
-				"path_regex":               "pathregex",
-				"prefix_rewrite":           "prefixrewrite",
-				"query_param":              "queryparam",
-				"request_timeout":          "requesttimeout",
-				"retry_on_connect_failure": "retryonconnectfailure",
-				"retry_on_status_codes":    "retryonstatuscodes",
-				"service_subset":           "servicesubset",
-			}, nil
-	case ServiceSplitter:
-		return []string{
-				"splits",
-				"Splits",
-			}, map[string]string{
-				"service_subset": "servicesubset",
-			}, nil
-	case ServiceResolver:
-		return nil, map[string]string{
-			"connect_timeout": "connecttimeout",
-			"default_subset":  "defaultsubset",
-			"only_passing":    "onlypassing",
-			"service_subset":  "servicesubset",
-		}, nil
-	case IngressGateway:
-		return []string{
-				"listeners",
-				"Listeners",
-				"listeners.services",
-				"Listeners.Services",
-			}, map[string]string{
-				"service_subset": "servicesubset",
-			}, nil
-	case TerminatingGateway:
-		return []string{
-				"services",
-				"Services",
-			}, map[string]string{
-				"ca_file":   "cafile",
-				"cert_file": "certfile",
-				"key_file":  "keyfile",
-			}, nil
-	default:
-		return nil, nil, fmt.Errorf("kind %q should be explicitly handled here", kind)
-	}
 }
 
 type ConfigEntryOp string

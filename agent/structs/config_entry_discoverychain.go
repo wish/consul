@@ -269,7 +269,16 @@ type ServiceRouteHTTPMatch struct {
 	Methods    []string                          `json:",omitempty"`
 }
 
-func (m *ServiceRouteHTTPMatch) IsEmpty() bool {
+func (m ServiceRouteHTTPMatch) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"path_exact":  "pathexact",
+		"path_prefix": "pathprefix",
+		"path_regex":  "pathregex",
+		"query_param": "queryparam",
+	}
+}
+
+func (m ServiceRouteHTTPMatch) IsEmpty() bool {
 	return m.PathExact == "" &&
 		m.PathPrefix == "" &&
 		m.PathRegex == "" &&
@@ -338,6 +347,17 @@ type ServiceRouteDestination struct {
 	// RetryOnStatusCodes is a flat list of http response status codes that are
 	// eligible for retry. This again should be feasible in any sane proxy.
 	RetryOnStatusCodes []uint32 `json:",omitempty"`
+}
+
+func (e *ServiceRouteDestination) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset":           "servicesubset",
+		"prefix_rewrite":           "prefixrewrite",
+		"request_timeout":          "requesttimeout",
+		"num_retries":              "numretries",
+		"retry_on_connect_failure": "retryonconnectfailure",
+		"retry_on_status_codes":    "retryonstatuscodes",
+	}
 }
 
 func (e *ServiceRouteDestination) MarshalJSON() ([]byte, error) {
@@ -586,6 +606,12 @@ type ServiceSplit struct {
 	Namespace string `json:",omitempty"`
 }
 
+func (s ServiceSplit) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset": "servicesubset",
+	}
+}
+
 // ServiceResolverConfigEntry defines which instances of a service should
 // satisfy discovery requests for a given named service.
 //
@@ -641,6 +667,13 @@ type ServiceResolverConfigEntry struct {
 
 	EnterpriseMeta `hcl:",squash" mapstructure:",squash"`
 	RaftIndex
+}
+
+func (e *ServiceResolverConfigEntry) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"connect_timeout": "connecttimeout",
+		"default_subset":  "defaultsubset",
+	}
 }
 
 func (e *ServiceResolverConfigEntry) MarshalJSON() ([]byte, error) {
@@ -887,6 +920,12 @@ type ServiceResolverSubset struct {
 	OnlyPassing bool `json:",omitempty"`
 }
 
+func (s ServiceResolverSubset) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"only_passing": "onlypassing",
+	}
+}
+
 type ServiceResolverRedirect struct {
 	// Service is a service to resolve instead of the current service
 	// (optional).
@@ -907,6 +946,12 @@ type ServiceResolverRedirect struct {
 	// Datacenter is the datacenter to resolve the service from instead of the
 	// current one (optional).
 	Datacenter string `json:",omitempty"`
+}
+
+func (s ServiceResolverRedirect) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset": "servicesubset",
+	}
 }
 
 // There are some restrictions on what is allowed in here:
@@ -941,6 +986,12 @@ type ServiceResolverFailover struct {
 	//
 	// This is a DESTINATION during failover.
 	Datacenters []string `json:",omitempty"`
+}
+
+func (s ServiceResolverFailover) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset": "servicesubset",
+	}
 }
 
 type discoveryChainConfigEntry interface {

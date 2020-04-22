@@ -67,19 +67,25 @@ type IngressService struct {
 	ServiceSubset string
 }
 
-func (i *IngressGatewayConfigEntry) GetKind() string {
+func (i IngressService) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset": "servicesubset",
+	}
+}
+
+func (i IngressGatewayConfigEntry) GetKind() string {
 	return i.Kind
 }
 
-func (i *IngressGatewayConfigEntry) GetName() string {
+func (i IngressGatewayConfigEntry) GetName() string {
 	return i.Name
 }
 
-func (i *IngressGatewayConfigEntry) GetCreateIndex() uint64 {
+func (i IngressGatewayConfigEntry) GetCreateIndex() uint64 {
 	return i.CreateIndex
 }
 
-func (i *IngressGatewayConfigEntry) GetModifyIndex() uint64 {
+func (i IngressGatewayConfigEntry) GetModifyIndex() uint64 {
 	return i.ModifyIndex
 }
 
@@ -129,6 +135,14 @@ type LinkedService struct {
 	// KeyFile is the optional path to a private key to use for TLS connections
 	// from the gateway to the linked service
 	KeyFile string `json:",omitempty"`
+}
+
+func (l LinkedService) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"ca_file":   "cafile",
+		"cert_file": "certfile",
+		"key_file":  "keyfile",
+	}
 }
 
 func (g *TerminatingGatewayConfigEntry) GetKind() string {

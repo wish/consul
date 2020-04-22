@@ -59,6 +59,12 @@ type IngressService struct {
 	EnterpriseMeta `hcl:",squash" mapstructure:",squash"`
 }
 
+func (i IngressService) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"service_subset": "servicesubset",
+	}
+}
+
 func (e *IngressGatewayConfigEntry) GetKind() string {
 	return IngressGateway
 }
@@ -201,6 +207,14 @@ type LinkedService struct {
 	KeyFile string `json:",omitempty"`
 
 	EnterpriseMeta `hcl:",squash" mapstructure:",squash"`
+}
+
+func (l LinkedService) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"ca_file":   "cafile",
+		"cert_file": "certfile",
+		"key_file":  "keyfile",
+	}
 }
 
 func (e *TerminatingGatewayConfigEntry) GetKind() string {

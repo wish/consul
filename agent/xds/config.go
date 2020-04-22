@@ -1,7 +1,8 @@
 package xds
 
 import (
-	"github.com/hashicorp/consul/lib"
+	"github.com/hashicorp/consul/lib/decode"
+
 	"strings"
 
 	"github.com/hashicorp/consul/agent/structs"
@@ -90,19 +91,35 @@ type GatewayConfig struct {
 	ConnectTimeoutMs int `mapstructure:"connect_timeout_ms"`
 }
 
+func (d GatewayConfig) DecodeKeyMapping() map[string]string {
+	// Fixup for deprecated mesh gateway names
+	return map[string]string{
+		"envoy_mesh_gateway_bind_tagged_addresses": "envoy_gateway_bind_tagged_addresses",
+		"envoy_mesh_gateway_bind_addresses":        "envoy_gateway_bind_addresses",
+		"envoy_mesh_gateway_no_default_bind":       "envoy_gateway_no_default_bind",
+	}
+}
+
 // ParseGatewayConfig returns the GatewayConfig parsed from an opaque map. If an
 // error occurs during parsing, it is returned along with the default config. This
 // allows the caller to choose whether and how to report the error
 func ParseGatewayConfig(m map[string]interface{}) (GatewayConfig, error) {
-	// Fixup for deprecated mesh gateway names
-	lib.TranslateKeys(m, map[string]string{
-		"envoy_mesh_gateway_bind_tagged_addresses": "envoy_gateway_bind_tagged_addresses",
-		"envoy_mesh_gateway_bind_addresses":        "envoy_gateway_bind_addresses",
-		"envoy_mesh_gateway_no_default_bind":       "envoy_gateway_no_default_bind",
-	})
-
 	var cfg GatewayConfig
-	err := mapstructure.WeakDecode(m, &cfg)
+
+	decodeConf := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			decode.HookTranslateKeys,
+		),
+		Result:           &cfg,
+		WeaklyTypedInput: true,
+	}
+	decoder, err := mapstructure.NewDecoder(decodeConf)
+	if err != nil {
+		return cfg, err
+	}
+	if err := decoder.Decode(m); err != nil {
+		return cfg, err
+	}
 
 	if cfg.ConnectTimeoutMs < 1 {
 		cfg.ConnectTimeoutMs = 5000

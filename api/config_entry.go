@@ -87,6 +87,13 @@ type ExposePath struct {
 	ParsedFromCheck bool
 }
 
+func (t ExposePath) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"local_path_port": "localpathport",
+		"listener_port":   "listenerport",
+	}
+}
+
 type ServiceConfigEntry struct {
 	Kind        string
 	Name        string
@@ -97,6 +104,13 @@ type ServiceConfigEntry struct {
 	ExternalSNI string            `json:",omitempty"`
 	CreateIndex uint64
 	ModifyIndex uint64
+}
+
+func (s *ServiceConfigEntry) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"mesh_gateway": "meshgateway",
+		"external_sni": "externalsni",
+	}
 }
 
 func (s *ServiceConfigEntry) GetKind() string {
@@ -124,6 +138,12 @@ type ProxyConfigEntry struct {
 	Expose      ExposeConfig           `json:",omitempty"`
 	CreateIndex uint64
 	ModifyIndex uint64
+}
+
+func (p *ProxyConfigEntry) DecodeKeyMapping() map[string]string {
+	return map[string]string{
+		"mesh_gateway": "meshgateway",
+	}
 }
 
 func (p *ProxyConfigEntry) GetKind() string {

@@ -250,7 +250,7 @@ type Upstream struct {
 
 	// IngressHosts are a list of hosts that should route to this upstream from
 	// an ingress gateway
-	IngressHosts []string `json:"-"`
+	IngressHosts []string `json:"-" bexpr:"-"`
 }
 
 func (t *Upstream) UnmarshalJSON(data []byte) (err error) {

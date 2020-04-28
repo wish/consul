@@ -102,3 +102,18 @@ type NetworkSegment struct {
 	// for this segment.
 	RPCListener bool
 }
+
+// (Enterprise-only) SegmentAddrRequest is used to request the addr from a
+// server for a segment.
+type SegmentAddrRequest struct {
+	// Datacenter is the target this request is intended for.
+	Datacenter string
+
+	// Segment is the name of the segment this request is for.
+	Segment string
+}
+
+// RequestDatacenter returns the datacenter for a given request.
+func (op *SegmentAddrRequest) RequestDatacenter() string {
+	return op.Datacenter
+}

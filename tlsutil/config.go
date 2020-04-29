@@ -925,6 +925,10 @@ func (c *Configurator) wrapALPNTLSClient(dc, nodeName, alpnProto string, conn ne
 	return tlsConn, nil
 }
 
+func (c *Configurator) UseTLS() bool {
+	return !c.outgoingRPCTLSDisabled()
+}
+
 // ParseCiphers parse ciphersuites from the comma-separated string into
 // recognized slice
 func ParseCiphers(cipherStr string) ([]uint16, error) {

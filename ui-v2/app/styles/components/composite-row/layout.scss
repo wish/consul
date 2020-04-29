@@ -1,10 +1,12 @@
 %composite-row {
-  cursor: pointer;
   display: block;
   box-sizing: border-box;
   padding: 12px;
   padding-right: 0;
   border: 1px solid;
+}
+%composite-row-header {
+  margin-bottom: 0 !important;
 }
 %composite-row-intent {
   border: 1px solid;

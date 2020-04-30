@@ -51,7 +51,7 @@ func TestAPI_ConfigEntries_IngressGateway(t *testing.T) {
 	ingress1.Listeners = []IngressListener{
 		{
 			Port:     2222,
-			Protocol: "tcp",
+			Protocol: "http",
 			Services: []IngressService{
 				{
 					Name:  "asdf",

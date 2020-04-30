@@ -5447,8 +5447,6 @@ func setupIngressState(t *testing.T, s *Store) memdb.WatchSet {
 	testRegisterService(t, s, 9, "node2", "service2")
 	testRegisterService(t, s, 10, "node2", "service3")
 
-<<<<<<< HEAD
-=======
 	// Default protocol to http
 	proxyDefaults := &structs.ProxyConfigEntry{
 		Name: structs.ProxyConfigGlobal,
@@ -5459,7 +5457,6 @@ func setupIngressState(t *testing.T, s *Store) memdb.WatchSet {
 	}
 	assert.NoError(t, s.EnsureConfigEntry(11, proxyDefaults, nil))
 
->>>>>>> Move ingress gateway protocol filtering into state.GatewayServices
 	// Register some ingress config entries.
 	wildcardIngress := &structs.IngressGatewayConfigEntry{
 		Kind: "ingress-gateway",
@@ -5503,12 +5500,8 @@ func setupIngressState(t *testing.T, s *Store) memdb.WatchSet {
 			},
 		},
 	}
-<<<<<<< HEAD
-	assert.NoError(t, s.EnsureConfigEntry(12, ingress1, nil))
-=======
 	assert.NoError(t, s.EnsureConfigEntry(13, ingress1, nil))
 	assert.True(t, watchFired(ws))
->>>>>>> Move ingress gateway protocol filtering into state.GatewayServices
 
 	ingress2 := &structs.IngressGatewayConfigEntry{
 		Kind: "ingress-gateway",

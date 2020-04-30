@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/hashicorp/consul/agent/consul/discoverychain"
 	"github.com/hashicorp/consul/agent/structs"
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/types"
@@ -2202,6 +2203,7 @@ func (s *Store) CheckServiceTagNodes(ws memdb.WatchSet, serviceName string, tags
 func (s *Store) GatewayServices(ws memdb.WatchSet, gateway string, entMeta *structs.EnterpriseMeta) (uint64, structs.GatewayServices, error) {
 	tx := s.db.Txn(false)
 	defer tx.Abort()
+	var maxIdx uint64
 
 	iter, err := s.gatewayServices(tx, gateway, entMeta)
 	if err != nil {
@@ -2214,12 +2216,26 @@ func (s *Store) GatewayServices(ws memdb.WatchSet, gateway string, entMeta *stru
 		svc := service.(*structs.GatewayService)
 
 		if svc.Service.ID != structs.WildcardSpecifier {
-			results = append(results, svc)
+			idx, matches, err := s.checkProtocolMatch(ws, svc, entMeta)
+			if err != nil {
+				return 0, nil, fmt.Errorf("failed checking protocol: %s", err)
+			}
+
+			if idx > maxIdx {
+				maxIdx = idx
+			}
+
+			if matches {
+				results = append(results, svc)
+			}
 		}
 	}
 
 	idx := maxIndexTxn(tx, gatewayServicesTableName)
-	return idx, results, nil
+	if idx > maxIdx {
+		maxIdx = idx
+	}
+	return maxIdx, results, nil
 }
 
 // parseCheckServiceNodes is used to parse through a given set of services,
@@ -2759,4 +2775,57 @@ func (s *Store) serviceGatewayNodes(tx *memdb.Txn, ws memdb.WatchSet, service st
 		}
 	}
 	return maxIdx, ret, nil
+}
+
+// filterGatewayServices filters out any GatewayService entries added from a wildcard with a protocol
+// that doesn't match the one configured in their discovery chain.
+func (s *Store) checkProtocolMatch(ws memdb.WatchSet,
+	svc *structs.GatewayService,
+	entMeta *structs.EnterpriseMeta,
+) (uint64, bool, error) {
+	if svc.GatewayKind != structs.ServiceKindIngressGateway {
+		return 0, true, nil
+	}
+
+	// Get the global proxy defaults (for default protocol)
+	maxIdx, proxyConfig, err := s.ConfigEntry(ws, structs.ProxyDefaults, structs.ProxyConfigGlobal, entMeta)
+	if err != nil {
+		return 0, false, err
+	}
+
+	// TODO(ingress): only check service entries added from wildcards during this filtering
+	// Check the wildcard entry's protocol against the discovery chain protocol for the service.
+	idx, serviceDefaults, err := s.ConfigEntry(ws, structs.ServiceDefaults, svc.Service.ID, &svc.Service.EnterpriseMeta)
+	if err != nil {
+		return 0, false, err
+	}
+	if idx > maxIdx {
+		maxIdx = idx
+	}
+
+	entries := structs.NewDiscoveryChainConfigEntries()
+	if proxyConfig != nil {
+		entries.AddEntries(proxyConfig)
+	}
+	if serviceDefaults != nil {
+		entries.AddEntries(serviceDefaults)
+	}
+	req := discoverychain.CompileRequest{
+		ServiceName:          svc.Service.ID,
+		EvaluateInNamespace:  svc.Service.NamespaceOrDefault(),
+		EvaluateInDatacenter: "dc1",
+		// Use a dummy trust domain since that won't affect the protocol here.
+		EvaluateInTrustDomain: "b6fc9da3-03d4-4b5a-9134-c045e9b20152.consul",
+		UseInDatacenter:       "dc1",
+		Entries:               entries,
+	}
+	chain, err := discoverychain.Compile(req)
+	if err != nil {
+		return 0, false, err
+	}
+	if svc.Protocol != chain.Protocol {
+		return 0, false, nil
+	}
+
+	return maxIdx, true, nil
 }

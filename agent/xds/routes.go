@@ -56,7 +56,7 @@ func routesFromSnapshotConnectProxy(cfgSnap *proxycfg.ConfigSnapshot) ([]proto.M
 
 			route := &envoy.RouteConfiguration{
 				Name:             upstreamID,
-				VirtualHosts:     []envoyroute.VirtualHost{*virtualHost},
+				VirtualHosts:     []envoyroute.VirtualHost{virtualHost},
 				ValidateClusters: makeBoolValue(true),
 			}
 			resources = append(resources, route)
@@ -115,7 +115,7 @@ func routesFromSnapshotIngressGateway(cfgSnap *proxycfg.ConfigSnapshot) ([]proto
 			if err != nil {
 				return nil, err
 			}
-			upstreamRoute.VirtualHosts = append(upstreamRoute.VirtualHosts, *virtualHost)
+			upstreamRoute.VirtualHosts = append(upstreamRoute.VirtualHosts, virtualHost)
 		}
 
 		result = append(result, upstreamRoute)
@@ -128,7 +128,7 @@ func makeUpstreamRouteForDiscoveryChain(
 	routeName string,
 	chain *structs.CompiledDiscoveryChain,
 	serviceDomains []string,
-) (*envoyroute.VirtualHost, error) {
+) (envoyroute.VirtualHost, error) {
 	var routes []envoyroute.Route
 
 	startNode := chain.Nodes[chain.StartNode]
@@ -153,14 +153,14 @@ func makeUpstreamRouteForDiscoveryChain(
 			case structs.DiscoveryGraphNodeTypeSplitter:
 				routeAction, err = makeRouteActionForSplitter(nextNode.Splits, chain)
 				if err != nil {
-					return nil, err
+					return envoyroute.VirtualHost{}, err
 				}
 
 			case structs.DiscoveryGraphNodeTypeResolver:
 				routeAction = makeRouteActionForSingleCluster(nextNode.Resolver.Target, chain)
 
 			default:
-				return nil, fmt.Errorf("unexpected graph node after route %q", nextNode.Type)
+				return envoyroute.VirtualHost{}, fmt.Errorf("unexpected graph node after route %q", nextNode.Type)
 			}
 
 			// TODO(rb): Better help handle the envoy case where you need (prefix=/foo/,rewrite=/) and (exact=/foo,rewrite=/) to do a full rewrite
@@ -207,7 +207,7 @@ func makeUpstreamRouteForDiscoveryChain(
 	case structs.DiscoveryGraphNodeTypeSplitter:
 		routeAction, err := makeRouteActionForSplitter(startNode.Splits, chain)
 		if err != nil {
-			return nil, err
+			return envoyroute.VirtualHost{}, err
 		}
 
 		defaultRoute := envoyroute.Route{
@@ -231,7 +231,7 @@ func makeUpstreamRouteForDiscoveryChain(
 		panic("unknown first node in discovery chain of type: " + startNode.Type)
 	}
 
-	host := &envoyroute.VirtualHost{
+	host := envoyroute.VirtualHost{
 		Name:    routeName,
 		Domains: serviceDomains,
 		Routes:  routes,

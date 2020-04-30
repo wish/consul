@@ -4991,27 +4991,55 @@ func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 	require := require.New(t)
 
 	t.Run("ingress1 gateway services", func(t *testing.T) {
+		expected := structs.GatewayServices{
+			{
+				Gateway:     structs.NewServiceID("ingress1", nil),
+				Service:     structs.NewServiceID("service1", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        1111,
+				Protocol:    "tcp",
+				Hosts:       []string{"test.example.com"},
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 12,
+					ModifyIndex: 12,
+				},
+			},
+			{
+				Gateway:     structs.NewServiceID("ingress1", nil),
+				Service:     structs.NewServiceID("service2", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        2222,
+				Protocol:    "tcp",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 12,
+					ModifyIndex: 12,
+				},
+			},
+		}
 		idx, results, err := s.GatewayServices(ws, "ingress1", nil)
 		require.NoError(err)
 		require.Equal(uint64(15), idx)
-		require.Len(results, 2)
-		require.Equal("ingress1", results[0].Gateway.ID)
-		require.Equal("service1", results[0].Service.ID)
-		require.Len(results[0].Hosts, 1)
-		require.Equal(1111, results[0].Port)
-		require.Equal("ingress1", results[1].Gateway.ID)
-		require.Equal("service2", results[1].Service.ID)
-		require.Equal(2222, results[1].Port)
+		require.ElementsMatch(results, expected)
 	})
 
 	t.Run("ingress2 gateway services", func(t *testing.T) {
+		expected := structs.GatewayServices{
+			{
+				Gateway:     structs.NewServiceID("ingress2", nil),
+				Service:     structs.NewServiceID("service1", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        3333,
+				Protocol:    "tcp",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 13,
+					ModifyIndex: 13,
+				},
+			},
+		}
 		idx, results, err := s.GatewayServices(ws, "ingress2", nil)
 		require.NoError(err)
 		require.Equal(uint64(15), idx)
-		require.Len(results, 1)
-		require.Equal("ingress2", results[0].Gateway.ID)
-		require.Equal("service1", results[0].Service.ID)
-		require.Equal(3333, results[0].Port)
+		require.ElementsMatch(results, expected)
 	})
 
 	t.Run("No gatway services associated", func(t *testing.T) {
@@ -5022,43 +5050,98 @@ func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 	})
 
 	t.Run("wildcard gateway services", func(t *testing.T) {
-		ws = memdb.NewWatchSet()
+		expected := structs.GatewayServices{
+			{
+				Gateway:     structs.NewServiceID("wildcardIngress", nil),
+				Service:     structs.NewServiceID("service1", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        4444,
+				Protocol:    "tcp",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 11,
+					ModifyIndex: 11,
+				},
+			},
+			{
+				Gateway:     structs.NewServiceID("wildcardIngress", nil),
+				Service:     structs.NewServiceID("service2", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        4444,
+				Protocol:    "tcp",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 11,
+					ModifyIndex: 11,
+				},
+			},
+			{
+				Gateway:     structs.NewServiceID("wildcardIngress", nil),
+				Service:     structs.NewServiceID("service3", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        4444,
+				Protocol:    "tcp",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 11,
+					ModifyIndex: 11,
+				},
+			},
+		}
 		idx, results, err := s.GatewayServices(ws, "wildcardIngress", nil)
 		require.NoError(err)
 		require.Equal(uint64(15), idx)
-		require.Len(results, 3)
-		require.Equal("wildcardIngress", results[0].Gateway.ID)
-		require.Equal("service1", results[0].Service.ID)
-		require.Equal(4444, results[0].Port)
-		require.Equal("wildcardIngress", results[1].Gateway.ID)
-		require.Equal("service2", results[1].Service.ID)
-		require.Equal(4444, results[1].Port)
-		require.Equal("wildcardIngress", results[2].Gateway.ID)
-		require.Equal("service3", results[2].Service.ID)
-		require.Equal(4444, results[2].Port)
+		require.ElementsMatch(results, expected)
 	})
 
 	t.Run("gateway with duplicate service", func(t *testing.T) {
+		expected := structs.GatewayServices{
+			{
+				Gateway:     structs.NewServiceID("ingress3", nil),
+				Service:     structs.NewServiceID("service1", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        5555,
+				Protocol:    "http",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 14,
+					ModifyIndex: 14,
+				},
+			},
+			{
+				Gateway:     structs.NewServiceID("ingress3", nil),
+				Service:     structs.NewServiceID("service2", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        5555,
+				Protocol:    "http",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 14,
+					ModifyIndex: 14,
+				},
+			},
+			{
+				Gateway:     structs.NewServiceID("ingress3", nil),
+				Service:     structs.NewServiceID("service3", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        5555,
+				Protocol:    "http",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 14,
+					ModifyIndex: 14,
+				},
+			},
+			{
+				Gateway:     structs.NewServiceID("ingress3", nil),
+				Service:     structs.NewServiceID("service1", nil),
+				GatewayKind: structs.ServiceKindIngressGateway,
+				Port:        6666,
+				Protocol:    "tcp",
+				RaftIndex: structs.RaftIndex{
+					CreateIndex: 14,
+					ModifyIndex: 14,
+				},
+			},
+		}
 		idx, results, err := s.GatewayServices(ws, "ingress3", nil)
 		require.NoError(err)
 		require.Equal(uint64(15), idx)
-		require.Len(results, 4)
-		require.Equal("ingress3", results[0].Gateway.ID)
-		require.Equal("service1", results[0].Service.ID)
-		require.Equal(6666, results[0].Port)
-		require.Equal("tcp", results[0].Protocol)
-		require.Equal("ingress3", results[1].Gateway.ID)
-		require.Equal("service1", results[1].Service.ID)
-		require.Equal(5555, results[1].Port)
-		require.Equal("http", results[1].Protocol)
-		require.Equal("ingress3", results[2].Gateway.ID)
-		require.Equal("service2", results[2].Service.ID)
-		require.Equal(5555, results[2].Port)
-		require.Equal("http", results[2].Protocol)
-		require.Equal("ingress3", results[3].Gateway.ID)
-		require.Equal("service3", results[3].Service.ID)
-		require.Equal(5555, results[3].Port)
-		require.Equal("http", results[3].Protocol)
+		require.ElementsMatch(results, expected)
 	})
 
 	t.Run("deregistering a service", func(t *testing.T) {

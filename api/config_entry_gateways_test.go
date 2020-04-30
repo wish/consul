@@ -54,7 +54,8 @@ func TestAPI_ConfigEntries_IngressGateway(t *testing.T) {
 			Protocol: "tcp",
 			Services: []IngressService{
 				{
-					Name: "asdf",
+					Name:  "asdf",
+					Hosts: []string{"test.example.com"},
 				},
 			},
 		},

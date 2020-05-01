@@ -156,12 +156,14 @@ func TestUpstream_UnmarshalJSON(t *testing.T) {
 			json: `{
 				"DestinationType": "service",
 				"DestinationName": "foo",
-				"Datacenter": "dc1"
+				"Datacenter": "dc1",
+				"IngressHosts": ["asdf"]
 			}`,
 			want: Upstream{
 				DestinationType: UpstreamDestTypeService,
 				DestinationName: "foo",
 				Datacenter:      "dc1",
+				IngressHosts:    nil, // Make sure this doesn't get parsed
 			},
 			wantErr: false,
 		},

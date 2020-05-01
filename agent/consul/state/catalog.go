@@ -2763,7 +2763,7 @@ func (s *Store) checkProtocolMatch(
 	svc *structs.GatewayService,
 	entMeta *structs.EnterpriseMeta,
 ) (uint64, bool, error) {
-	if svc.GatewayKind != structs.ServiceKindIngressGateway {
+	if svc.GatewayKind != structs.ServiceKindIngressGateway || !svc.FromWildcard {
 		return 0, true, nil
 	}
 
@@ -2773,7 +2773,6 @@ func (s *Store) checkProtocolMatch(
 		return 0, false, err
 	}
 
-	// TODO(ingress): only check service entries added from wildcards during this filtering
 	// Check the wildcard entry's protocol against the discovery chain protocol for the service.
 	idx, serviceDefaults, err := s.configEntryTxn(tx, ws, structs.ServiceDefaults, svc.Service.ID, &svc.Service.EnterpriseMeta)
 	if err != nil {

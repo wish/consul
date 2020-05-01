@@ -4988,7 +4988,6 @@ func TestStateStore_CheckIngressServiceNodes(t *testing.T) {
 func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 	s := testStateStore(t)
 	ws := setupIngressState(t, s)
-	require := require.New(t)
 
 	t.Run("ingress1 gateway services", func(t *testing.T) {
 		expected := structs.GatewayServices{
@@ -5017,9 +5016,9 @@ func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 			},
 		}
 		idx, results, err := s.GatewayServices(ws, "ingress1", nil)
-		require.NoError(err)
-		require.Equal(uint64(16), idx)
-		require.ElementsMatch(results, expected)
+		require.NoError(t, err)
+		require.Equal(t, uint64(16), idx)
+		require.ElementsMatch(t, results, expected)
 	})
 
 	t.Run("ingress2 gateway services", func(t *testing.T) {
@@ -5037,48 +5036,51 @@ func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 			},
 		}
 		idx, results, err := s.GatewayServices(ws, "ingress2", nil)
-		require.NoError(err)
-		require.Equal(uint64(16), idx)
-		require.ElementsMatch(results, expected)
+		require.NoError(t, err)
+		require.Equal(t, uint64(16), idx)
+		require.ElementsMatch(t, results, expected)
 	})
 
 	t.Run("No gatway services associated", func(t *testing.T) {
 		idx, results, err := s.GatewayServices(ws, "nothingIngress", nil)
-		require.NoError(err)
-		require.Equal(uint64(16), idx)
-		require.Len(results, 0)
+		require.NoError(t, err)
+		require.Equal(t, uint64(16), idx)
+		require.Len(t, results, 0)
 	})
 
 	t.Run("wildcard gateway services", func(t *testing.T) {
 		expected := structs.GatewayServices{
 			{
-				Gateway:     structs.NewServiceID("wildcardIngress", nil),
-				Service:     structs.NewServiceID("service1", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        4444,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("wildcardIngress", nil),
+				Service:      structs.NewServiceID("service1", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         4444,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 12,
 					ModifyIndex: 12,
 				},
 			},
 			{
-				Gateway:     structs.NewServiceID("wildcardIngress", nil),
-				Service:     structs.NewServiceID("service2", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        4444,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("wildcardIngress", nil),
+				Service:      structs.NewServiceID("service2", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         4444,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 12,
 					ModifyIndex: 12,
 				},
 			},
 			{
-				Gateway:     structs.NewServiceID("wildcardIngress", nil),
-				Service:     structs.NewServiceID("service3", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        4444,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("wildcardIngress", nil),
+				Service:      structs.NewServiceID("service3", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         4444,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 12,
 					ModifyIndex: 12,
@@ -5086,41 +5088,44 @@ func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 			},
 		}
 		idx, results, err := s.GatewayServices(ws, "wildcardIngress", nil)
-		require.NoError(err)
-		require.Equal(uint64(16), idx)
-		require.ElementsMatch(results, expected)
+		require.NoError(t, err)
+		require.Equal(t, uint64(16), idx)
+		require.ElementsMatch(t, results, expected)
 	})
 
 	t.Run("gateway with duplicate service", func(t *testing.T) {
 		expected := structs.GatewayServices{
 			{
-				Gateway:     structs.NewServiceID("ingress3", nil),
-				Service:     structs.NewServiceID("service1", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        5555,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("ingress3", nil),
+				Service:      structs.NewServiceID("service1", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         5555,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 15,
 					ModifyIndex: 15,
 				},
 			},
 			{
-				Gateway:     structs.NewServiceID("ingress3", nil),
-				Service:     structs.NewServiceID("service2", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        5555,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("ingress3", nil),
+				Service:      structs.NewServiceID("service2", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         5555,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 15,
 					ModifyIndex: 15,
 				},
 			},
 			{
-				Gateway:     structs.NewServiceID("ingress3", nil),
-				Service:     structs.NewServiceID("service3", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        5555,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("ingress3", nil),
+				Service:      structs.NewServiceID("service3", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         5555,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 15,
 					ModifyIndex: 15,
@@ -5139,20 +5144,20 @@ func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 			},
 		}
 		idx, results, err := s.GatewayServices(ws, "ingress3", nil)
-		require.NoError(err)
-		require.Equal(uint64(16), idx)
-		require.ElementsMatch(results, expected)
+		require.NoError(t, err)
+		require.Equal(t, uint64(16), idx)
+		require.ElementsMatch(t, results, expected)
 	})
 
 	t.Run("deregistering a service", func(t *testing.T) {
-		require.Nil(s.DeleteService(18, "node1", "service1", nil))
-		require.True(watchFired(ws))
+		require.Nil(t, s.DeleteService(18, "node1", "service1", nil))
+		require.True(t, watchFired(ws))
 
 		ws = memdb.NewWatchSet()
 		idx, results, err := s.GatewayServices(ws, "wildcardIngress", nil)
-		require.NoError(err)
-		require.Equal(uint64(18), idx)
-		require.Len(results, 2)
+		require.NoError(t, err)
+		require.Equal(t, uint64(18), idx)
+		require.Len(t, results, 2)
 	})
 
 	// TODO(ingress): This test case fails right now because of a
@@ -5170,14 +5175,14 @@ func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 	// })
 
 	t.Run("deleting a wildcard config entry", func(t *testing.T) {
-		require.Nil(s.DeleteConfigEntry(19, "ingress-gateway", "wildcardIngress", nil))
-		require.True(watchFired(ws))
+		require.Nil(t, s.DeleteConfigEntry(19, "ingress-gateway", "wildcardIngress", nil))
+		require.True(t, watchFired(ws))
 
 		ws = memdb.NewWatchSet()
 		idx, results, err := s.GatewayServices(ws, "wildcardIngress", nil)
-		require.NoError(err)
-		require.Equal(uint64(19), idx)
-		require.Len(results, 0)
+		require.NoError(t, err)
+		require.Equal(t, uint64(19), idx)
+		require.Len(t, results, 0)
 	})
 
 	t.Run("updating a config entry with zero listeners", func(t *testing.T) {
@@ -5186,13 +5191,13 @@ func TestStateStore_GatewayServices_Ingress(t *testing.T) {
 			Name:      "ingress1",
 			Listeners: []structs.IngressListener{},
 		}
-		require.Nil(s.EnsureConfigEntry(20, ingress1, nil))
-		require.True(watchFired(ws))
+		require.Nil(t, s.EnsureConfigEntry(20, ingress1, nil))
+		require.True(t, watchFired(ws))
 
 		idx, results, err := s.GatewayServices(ws, "ingress1", nil)
-		require.NoError(err)
-		require.Equal(uint64(20), idx)
-		require.Len(results, 0)
+		require.NoError(t, err)
+		require.Equal(t, uint64(20), idx)
+		require.Len(t, results, 0)
 	})
 }
 
@@ -5290,11 +5295,12 @@ func TestStateStore_GatewayServices_IngressProtocolFiltering(t *testing.T) {
 		require := require.New(t)
 		expected := structs.GatewayServices{
 			{
-				Gateway:     structs.NewServiceID("ingress1", nil),
-				Service:     structs.NewServiceID("service1", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        4444,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("ingress1", nil),
+				Service:      structs.NewServiceID("service1", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         4444,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 4,
 					ModifyIndex: 4,
@@ -5318,22 +5324,24 @@ func TestStateStore_GatewayServices_IngressProtocolFiltering(t *testing.T) {
 		require := require.New(t)
 		expected := structs.GatewayServices{
 			{
-				Gateway:     structs.NewServiceID("ingress1", nil),
-				Service:     structs.NewServiceID("service1", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        4444,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("ingress1", nil),
+				Service:      structs.NewServiceID("service1", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         4444,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 4,
 					ModifyIndex: 4,
 				},
 			},
 			{
-				Gateway:     structs.NewServiceID("ingress1", nil),
-				Service:     structs.NewServiceID("service2", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        4444,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("ingress1", nil),
+				Service:      structs.NewServiceID("service2", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         4444,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 4,
 					ModifyIndex: 4,
@@ -5360,11 +5368,12 @@ func TestStateStore_GatewayServices_IngressProtocolFiltering(t *testing.T) {
 		require := require.New(t)
 		expected := structs.GatewayServices{
 			{
-				Gateway:     structs.NewServiceID("ingress1", nil),
-				Service:     structs.NewServiceID("service2", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        4444,
-				Protocol:    "http",
+				Gateway:      structs.NewServiceID("ingress1", nil),
+				Service:      structs.NewServiceID("service2", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         4444,
+				Protocol:     "http",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 4,
 					ModifyIndex: 4,
@@ -5389,11 +5398,12 @@ func TestStateStore_GatewayServices_IngressProtocolFiltering(t *testing.T) {
 		require := require.New(t)
 		expected := structs.GatewayServices{
 			{
-				Gateway:     structs.NewServiceID("ingress1", nil),
-				Service:     structs.NewServiceID("service1", nil),
-				GatewayKind: structs.ServiceKindIngressGateway,
-				Port:        4444,
-				Protocol:    "grpc",
+				Gateway:      structs.NewServiceID("ingress1", nil),
+				Service:      structs.NewServiceID("service1", nil),
+				GatewayKind:  structs.ServiceKindIngressGateway,
+				Port:         4444,
+				Protocol:     "grpc",
+				FromWildcard: true,
 				RaftIndex: structs.RaftIndex{
 					CreateIndex: 8,
 					ModifyIndex: 8,

@@ -320,6 +320,9 @@ func (m *Internal) GatewayServices(args *structs.ServiceSpecificRequest, reply *
 		&args.QueryOptions,
 		&reply.QueryMeta,
 		func(ws memdb.WatchSet, state *state.Store) error {
+			var index uint64
+			var services structs.GatewayServices
+
 			supportedGateways := []string{structs.IngressGateway, structs.TerminatingGateway}
 			var found bool
 			for _, kind := range supportedGateways {
@@ -337,7 +340,7 @@ func (m *Internal) GatewayServices(args *structs.ServiceSpecificRequest, reply *
 				return fmt.Errorf("service %q is not a configured terminating-gateway or ingress-gateway", args.ServiceName)
 			}
 
-			index, services, err := state.GatewayServices(ws, args.ServiceName, &args.EnterpriseMeta)
+			index, services, err = state.GatewayServices(ws, args.ServiceName, &args.EnterpriseMeta)
 			if err != nil {
 				return err
 			}

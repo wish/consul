@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/hashicorp/consul/agent/consul/discoverychain"
 	"github.com/hashicorp/consul/agent/structs"
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/lib"
@@ -2206,7 +2205,7 @@ func (s *Store) GatewayServices(ws memdb.WatchSet, gateway string, entMeta *stru
 		svc := service.(*structs.GatewayService)
 
 		if svc.Service.ID != structs.WildcardSpecifier {
-			idx, matches, err := s.checkProtocolMatch(tx, ws, svc, entMeta)
+			idx, matches, err := s.checkProtocolMatch(tx, ws, svc)
 			if err != nil {
 				return 0, nil, fmt.Errorf("failed checking protocol: %s", err)
 			}
@@ -2761,48 +2760,15 @@ func (s *Store) checkProtocolMatch(
 	tx *memdb.Txn,
 	ws memdb.WatchSet,
 	svc *structs.GatewayService,
-	entMeta *structs.EnterpriseMeta,
 ) (uint64, bool, error) {
 	if svc.GatewayKind != structs.ServiceKindIngressGateway || !svc.FromWildcard {
 		return 0, true, nil
 	}
 
-	// Get the global proxy defaults (for default protocol)
-	maxIdx, proxyConfig, err := s.configEntryTxn(tx, ws, structs.ProxyDefaults, structs.ProxyConfigGlobal, entMeta)
+	idx, protocol, err := s.protocolForService(tx, ws, svc.Service)
 	if err != nil {
 		return 0, false, err
 	}
 
-	// Check the wildcard entry's protocol against the discovery chain protocol for the service.
-	idx, serviceDefaults, err := s.configEntryTxn(tx, ws, structs.ServiceDefaults, svc.Service.ID, &svc.Service.EnterpriseMeta)
-	if err != nil {
-		return 0, false, err
-	}
-	maxIdx = lib.MaxUint64(maxIdx, idx)
-
-	entries := structs.NewDiscoveryChainConfigEntries()
-	if proxyConfig != nil {
-		entries.AddEntries(proxyConfig)
-	}
-	if serviceDefaults != nil {
-		entries.AddEntries(serviceDefaults)
-	}
-	req := discoverychain.CompileRequest{
-		ServiceName:          svc.Service.ID,
-		EvaluateInNamespace:  svc.Service.NamespaceOrDefault(),
-		EvaluateInDatacenter: "dc1",
-		// Use a dummy trust domain since that won't affect the protocol here.
-		EvaluateInTrustDomain: "b6fc9da3-03d4-4b5a-9134-c045e9b20152.consul",
-		UseInDatacenter:       "dc1",
-		Entries:               entries,
-	}
-	chain, err := discoverychain.Compile(req)
-	if err != nil {
-		return 0, false, err
-	}
-	if svc.Protocol != chain.Protocol {
-		return 0, false, nil
-	}
-
-	return maxIdx, true, nil
+	return idx, svc.Protocol == protocol, nil
 }
